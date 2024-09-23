@@ -83,6 +83,15 @@ def grab_banner(ip, port):
     except Exception as e:
         logging.error(f"Error grabbing banner from port {port}: {e}")
 
+# SearchSploit Lookup
+def searchsploit_lookup(term):
+    logging.info(f"Searching for exploits related to: {term}...")
+    try:
+        output = subprocess.check_output(f"searchsploit {term}", shell=True, stderr=subprocess.STDOUT).decode()
+        logging.info(f"Searchsploit Results:\n{output}")
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Error during searchsploit lookup: {e.output.decode()}")
+        
 # OS Detection
 def detect_os(ip):
     logging.info(f"Detecting OS for {ip}...")
@@ -244,6 +253,7 @@ def main():
     parser.add_argument('--encrypt', nargs=2, metavar=('FILE', 'PASSWORD'), help='Encrypt FILE with PASSWORD')
     parser.add_argument('--decrypt', nargs=2, metavar=('FILE', 'PASSWORD'), help='Decrypt FILE with PASSWORD')
     parser.add_argument('--capture', metavar='INTERFACE', help='Capture packets on INTERFACE')
+    parser.add_argument('--searchsploit', metavar='TERM', help='Search for exploits related to TERM')
 
     args = parser.parse_args()
 
@@ -264,6 +274,8 @@ def main():
         enum4linux(args.enum4linux)
     if args.reverse_shell:
         reverse_shell(args.reverse_shell[0], args.reverse_shell[1])
+    if args.searchsploit:
+        searchsploit_lookup(args.searchsploit)
     if args.stealth:
         stealth_mode()
     if args.brute_force:
