@@ -21,23 +21,31 @@ logging.basicConfig(filename='report.log', level=logging.INFO, format='%(asctime
 # Gradient banner
 def print_banner():
     banner = (
-" ███▄ ▄███▓ █    ██  ██▓  ▄▄▄█████▓ ██▓▄▄▄█████▓ ▒█████   ▒█████   ██▓    \n"
-"▓██▒▀█▀ ██▒ ██  ▓██▒▓██▒  ▓  ██▒ ▓▒▓██▒▓  ██▒ ▓▒▒██▒  ██▒▒██▒  ██▒▓██▒    \n"
-"▓██    ▓██░▓██  ▒██░▒██░  ▒ ▓██░ ▒░▒██▒▒ ▓██░ ▒░▒██░  ██▒▒██░  ██▒▒██░    \n"
-"▒██    ▒██ ▓▓█  ░██░▒██░  ░ ▓██▓ ░ ░██░░ ▓██▓ ░ ▒██   ██░▒██   ██░▒██░    \n"
-"▒██▒   ░██▒▒▒█████▓ ░██████▒▒██▒ ░ ░██░  ▒██▒ ░ ░ ████▓▒░░ ████▓▒░░██████▒\n"
-"░ ▒░   ░  ░░▒▓▒ ▒ ▒ ░ ▒░▓  ░▒ ░░   ░▓    ▒ ░░   ░ ▒░▒░▒░ ░ ▒░▒░▒░ ░ ▒░▓  ░\n"
-"░  ░      ░░░▒░ ░ ░ ░ ░ ▒  ░  ░     ▒ ░    ░      ░ ▒ ▒░   ░ ▒ ▒░ ░ ░ ▒  ░\n"
-"░      ░    ░░░ ░ ░   ░ ░   ░       ▒ ░  ░      ░ ░ ░ ▒  ░ ░ ░ ▒    ░ ░   \n"
-"      ░      ░         ░  ░        ░               ░ ░      ░ ░      ░  ░ \n"
-"                   Created By SaadSaid158 on GitHub                       \n"
-"          With great power comes great responsibility — Stan Lee          \n"
- 
+        " ███▄ ▄███▓ █    ██  ██▓  ▄▄▄█████▓ ██▓▄▄▄█████▓ ▒█████   ▒█████   ██▓    \n"
+        "▓██▒▀█▀ ██▒ ██  ▓██▒▓██▒  ▓  ██▒ ▓▒▓██▒▓  ██▒ ▓▒▒██▒  ██▒▒██▒  ██▒▓██▒    \n"
+        "▓██    ▓██░▓██  ▒██░▒██░  ▒ ▓██░ ▒░▒██▒▒ ▓██░ ▒░▒██░  ██▒▒██░  ██▒▒██░    \n"
+        "▒██    ▒██ ▓▓█  ░██░▒██░  ░ ▓██▓ ░ ░██░░ ▓██▓ ░ ▒██   ██░▒██   ██░▒██░    \n"
+        "▒██▒   ░██▒▒▒█████▓ ░██████▒▒██▒ ░ ░██░  ▒██▒ ░ ░ ████▓▒░░ ████▓▒░░██████▒\n"
+        "░ ▒░   ░  ░░▒▓▒ ▒ ▒ ░ ▒░▓  ░▒ ░░   ░▓    ▒ ░░   ░ ▒░▒░▒░ ░ ▒░▒░▒░ ░ ▒░▓  ░\n"
+        "░  ░      ░░░▒░ ░ ░ ░ ░ ▒  ░  ░     ▒ ░    ░      ░ ▒ ▒░   ░ ▒ ▒░ ░ ░ ▒  ░\n"
+        "░      ░    ░░░ ░ ░   ░ ░   ░       ▒ ░  ░      ░ ░ ░ ▒  ░ ░ ░ ▒    ░ ░   \n"
+        "                   Created By SaadSaid158 on GitHub                       \n"
+        "          With great power comes great responsibility — Stan Lee          \n"
     )
     print(banner)
 
 # Global variables
 open_ports = []
+
+# Function to check and install missing tools
+def install_missing_tools():
+    tools = ['nmap', 'enum4linux', 'sqlmap', 'dig', 'sshpass']
+    for tool in tools:
+        try:
+            subprocess.run([tool, '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except FileNotFoundError:
+            logging.info(f"{tool} not found. Installing...")
+            subprocess.run(['sudo', 'apt-get', 'install', '-y', tool])
 
 # Port Scanner with Banner Grabbing
 def port_scan(ip, port_range):
@@ -193,112 +201,54 @@ def encrypt_file(filename, password):
     with open(filename, 'rb') as f:
         data = f.read()
     ciphertext, tag = cipher.encrypt_and_digest(data)
-    with open(filename + ".enc", 'wb') as f_enc:
-        f_enc.write(cipher.nonce + tag + ciphertext)
+    with open(filename + '.enc', 'wb') as f:
+        f.write(cipher.nonce + tag + ciphertext)
     logging.info(f"{filename} encrypted successfully!")
 
 def decrypt_file(filename, password):
     logging.info(f"Decrypting {filename}...")
+    with open(filename, 'rb') as f:
+        nonce, tag, ciphertext = f.read(16), f.read(16), f.read()
     key = PBKDF2(password.encode(), b'salt', dkLen=32)
-    with open(filename, 'rb') as f_enc:
-        nonce, tag, ciphertext = [f_enc.read(x) for x in (16, 16, -1)]
     cipher = AES.new(key, AES.MODE_GCM, nonce=nonce)
     data = cipher.decrypt_and_verify(ciphertext, tag)
     with open(filename[:-4], 'wb') as f:
         f.write(data)
     logging.info(f"{filename} decrypted successfully!")
 
-def hash_crack(hash_value, hash_type):
-    logging.info(f"Cracking {hash_type} hash: {hash_value}...")
-    wordlist = '/usr/share/wordlists/rockyou.txt'  
-    with open(wordlist, 'r') as f:
-        for line in f:
-            candidate = line.strip()
-            if hash_type == 'md5' and hashlib.md5(candidate.encode()).hexdigest() == hash_value:
-                logging.info(f"MD5 hash cracked: {candidate}")
-                return candidate
-            elif hash_type == 'sha1' and hashlib.sha1(candidate.encode()).hexdigest() == hash_value:
-                logging.info(f"SHA1 hash cracked: {candidate}")
-                return candidate
-    logging.warning("Hash not cracked.")
-    return None
+# Scapy Packet Capture
+def capture_packets(interface):
+    logging.info(f"Capturing packets on {interface}...")
+    packets = scapy.sniff(iface=interface, count=10)
+    scapy.wrpcap('captured_packets.pcap', packets)
+    logging.info("Packets captured successfully!")
 
-def searchsploit_lookup(term):
-    logging.info(f"Searching for {term} in SearchSploit...")
-    result = subprocess.run(f"searchsploit {term}", shell=True, capture_output=True, text=True)
-    logging.info(result.stdout)
-
-def ftp_transfer(target, username, password, local_file, remote_file):
-    try:
-        ftp = ftplib.FTP(target)
-        ftp.login(user=username, passwd=password)
-        with open(local_file, 'rb') as f:
-            ftp.storbinary(f'STOR {remote_file}', f)
-        ftp.quit()
-        logging.info(f"Successfully transferred {local_file} to {target}:{remote_file}")
-    except Exception as e:
-        logging.error(f"FTP transfer error: {e}")
-
-def scp_transfer(target, username, password, local_file, remote_file):
-    try:
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(target, username=username, password=password)
-        scp = SCPClient(ssh.get_transport())
-        scp.put(local_file, remote_path=remote_file)
-        scp.close()
-        logging.info(f"Successfully transferred {local_file} to {target}:{remote_file}")
-    except Exception as e:
-        logging.error(f"SCP transfer error: {e}")
-
-def api_interaction(api_url, params):
-    logging.info(f"Interacting with API at {api_url}...")
-    try:
-        response = requests.get(api_url, params=params)
-        if response.status_code == 200:
-            logging.info(f"API Response: {response.json()}")
-        else:
-            logging.error(f"API error: {response.status_code}")
-    except requests.RequestException as e:
-        logging.error(f"API interaction error: {e}")
-
-# Automated Reporting
-def generate_report():
-    logging.info("Generating automated report...")
-    with open('report.log', 'r') as f:
-        content = f.read()
-    with open('report.txt', 'w') as report_file:
-        report_file.write(content)
-    logging.info("Report generated: report.txt")
-
-# Main Function
-if __name__ == "__main__":
+# Command-line Interface
+def main():
     print_banner()
-    parser = argparse.ArgumentParser(description="Ultimate Hacking Multitool")
-    parser.add_argument("--scan", help="Scan a range of ports, e.g., 192.168.1.1 20-80")
-    parser.add_argument("--os-detect", help="Detect OS for the target IP")
-    parser.add_argument("--geoip", help="Lookup GeoIP for the target IP")
-    parser.add_argument("--sql-injection", help="Check URL for SQL injection")
-    parser.add_argument("--password-strength", help="Check password strength")
-    parser.add_argument("--dns-enumeration", help="Enumerate DNS records for the domain")
-    parser.add_argument("--enum4linux", help="Run Enum4Linux on target IP")
-    parser.add_argument("--reverse-shell", help="Generate reverse shell command")
-    parser.add_argument("--stealth", action="store_true", help="Activate stealth mode")
-    parser.add_argument("--brute-force", nargs=4, help="Brute force: target username password_file protocol")
-    parser.add_argument("--encrypt", help="Encrypt a file")
-    parser.add_argument("--decrypt", help="Decrypt a file")
-    parser.add_argument("--hash-crack", nargs=2, help="Crack a hash: hash_value hash_type")
-    parser.add_argument("--searchsploit", help="Search for a term in SearchSploit")
-    parser.add_argument("--ftp-transfer", nargs=4, help="FTP transfer: target username password local_file remote_file")
-    parser.add_argument("--scp-transfer", nargs=4, help="SCP transfer: target username password local_file remote_file")
-    parser.add_argument("--api", nargs=2, help="Interact with API: api_url params")
-    parser.add_argument("--report", action="store_true", help="Generate automated report")
+    
+    # Install missing tools
+    install_missing_tools()
+    
+    parser = argparse.ArgumentParser(description='Hacking Multitool')
+    parser.add_argument('--port-scan', nargs=2, metavar=('IP', 'RANGE'), help='Scan ports in RANGE (e.g., 1-100)')
+    parser.add_argument('--os-detect', metavar='IP', help='Detect OS for IP')
+    parser.add_argument('--geoip', metavar='IP', help='Perform GeoIP lookup for IP')
+    parser.add_argument('--sql-injection', metavar='URL', help='Check URL for SQL injection')
+    parser.add_argument('--password-strength', metavar='PASSWORD', help='Check password strength')
+    parser.add_argument('--dns-enum', metavar='DOMAIN', help='Enumerate DNS records for DOMAIN')
+    parser.add_argument('--enum4linux', metavar='IP', help='Run Enum4Linux on IP')
+    parser.add_argument('--reverse-shell', nargs=2, metavar=('IP', 'PORT'), help='Generate reverse shell')
+    parser.add_argument('--stealth', action='store_true', help='Activate stealth mode')
+    parser.add_argument('--brute-force', nargs=3, metavar=('TARGET', 'USERNAME', 'PASSWORD_FILE'), help='Brute force login on TARGET')
+    parser.add_argument('--encrypt', nargs=2, metavar=('FILE', 'PASSWORD'), help='Encrypt FILE with PASSWORD')
+    parser.add_argument('--decrypt', nargs=2, metavar=('FILE', 'PASSWORD'), help='Decrypt FILE with PASSWORD')
+    parser.add_argument('--capture', metavar='INTERFACE', help='Capture packets on INTERFACE')
 
     args = parser.parse_args()
 
-    if args.scan:
-        ip, port_range = args.scan.split()
-        port_scan(ip, port_range)
+    if args.port_scan:
+        port_scan(args.port_scan[0], args.port_scan[1])
     if args.os_detect:
         detect_os(args.os_detect)
     if args.geoip:
@@ -308,34 +258,22 @@ if __name__ == "__main__":
     if args.password_strength:
         strength = password_strength(args.password_strength)
         logging.info(f"Password strength: {strength}")
-    if args.dns_enumeration:
-        dns_enumeration(args.dns_enumeration)
+    if args.dns_enum:
+        dns_enumeration(args.dns_enum)
     if args.enum4linux:
         enum4linux(args.enum4linux)
     if args.reverse_shell:
-        reverse_shell(args.reverse_shell, 4444)
+        reverse_shell(args.reverse_shell[0], args.reverse_shell[1])
     if args.stealth:
         stealth_mode()
     if args.brute_force:
-        target, username, password_file, protocol = args.brute_force
-        brute_force(target, username, password_file, protocol)
+        brute_force(args.brute_force[0], args.brute_force[1], args.brute_force[2], 'ssh')  # default to SSH
     if args.encrypt:
-        encrypt_file(args.encrypt, "your_password")
+        encrypt_file(args.encrypt[0], args.encrypt[1])
     if args.decrypt:
-        decrypt_file(args.decrypt, "your_password")
-    if args.hash_crack:
-        hash_value, hash_type = args.hash_crack
-        hash_crack(hash_value, hash_type)
-    if args.searchsploit:
-        searchsploit_lookup(args.searchsploit)
-    if args.ftp_transfer:
-        target, username, password, local_file, remote_file = args.ftp_transfer
-        ftp_transfer(target, username, password, local_file, remote_file)
-    if args.scp_transfer:
-        target, username, password, local_file, remote_file = args.scp_transfer
-        scp_transfer(target, username, password, local_file, remote_file)
-    if args.api:
-        api_url, params = args.api
-        api_interaction(api_url, json.loads(params))  
-    if args.report:
-        generate_report()
+        decrypt_file(args.decrypt[0], args.decrypt[1])
+    if args.capture:
+        capture_packets(args.capture)
+
+if __name__ == "__main__":
+    main()
